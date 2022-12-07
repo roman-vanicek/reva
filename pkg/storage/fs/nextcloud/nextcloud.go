@@ -25,7 +25,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	user "github.com/cs3org/go-cs3apis/cs3/identity/user/v1beta1"
@@ -127,21 +126,15 @@ func (nc *StorageDriver) SetHTTPClient(c *http.Client) {
 
 func (nc *StorageDriver) doUpload(ctx context.Context, filePath string, r io.ReadCloser) error {
 	// log := appctx.GetLogger(ctx)
-	// log.Error().Msgf("in doUpload!  %s", filePath)
 	user, err := getUser(ctx)
 	if err != nil {
-		// log.Error().Msg("error getting user!")
 		return err
 	}
-	// log.Error().Msgf("got user! %+v", user)
-
 	// See https://github.com/pondersource/nc-sciencemesh/issues/5
 	// url := nc.endPoint + "~" + user.Username + "/files/" + filePath
-	url := nc.endPoint + "~" + user.Id.OpaqueId + "/api/storage/Upload/home" + filePath
-	// log.Error().Msgf("sending PUT to NC/OC!  %s", url)
+	url := nc.endPoint + "~" + user.Username + "/api/storage/Upload/" + filePath
 	req, err := http.NewRequest(http.MethodPut, url, r)
 	if err != nil {
-		// log.Error().Msgf("error!  %s", err.Error())
 		panic(err)
 	}
 
@@ -149,10 +142,8 @@ func (nc *StorageDriver) doUpload(ctx context.Context, filePath string, r io.Rea
 	// set the request header Content-Type for the upload
 	// FIXME: get the actual content type from somewhere
 	req.Header.Set("Content-Type", "text/plain")
-	// log.Error().Msg("client req")
 	resp, err := nc.client.Do(req)
 	if err != nil {
-		// log.Error().Msgf("error!  %s", err.Error())
 		panic(err)
 	}
 
@@ -238,9 +229,7 @@ func (nc *StorageDriver) do(ctx context.Context, a Action) (int, []byte, error) 
 		return 0, nil, err
 	}
 	log.Info().Msgf("nc.do res %s %s", url, string(body))
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNotFound {
-		return 0, nil, fmt.Errorf("Unexpected response code from EFSS API: " + strconv.Itoa(resp.StatusCode) + ":" + string(body))
-	}
+
 	return resp.StatusCode, body, nil
 }
 

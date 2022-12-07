@@ -19,7 +19,6 @@
 package sender
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,7 +29,6 @@ import (
 	"time"
 
 	ocmprovider "github.com/cs3org/go-cs3apis/cs3/ocm/provider/v1beta1"
-	"github.com/cs3org/reva/pkg/appctx"
 	"github.com/cs3org/reva/pkg/rhttp"
 	"github.com/pkg/errors"
 )
@@ -48,7 +46,7 @@ func getOCMEndpoint(originProvider *ocmprovider.ProviderInfo) (string, error) {
 
 // Send executes the POST to the OCM shares endpoint to create the share at the
 // remote site.
-func Send(ctx context.Context, requestBodyMap map[string]interface{}, pi *ocmprovider.ProviderInfo) error {
+func Send(requestBodyMap map[string]interface{}, pi *ocmprovider.ProviderInfo) error {
 	requestBody, err := json.Marshal(requestBodyMap)
 	if err != nil {
 		err = errors.Wrap(err, "error marshalling request body")
@@ -64,9 +62,6 @@ func Send(ctx context.Context, requestBodyMap map[string]interface{}, pi *ocmpro
 	}
 	u.Path = path.Join(u.Path, createOCMCoreShareEndpoint)
 	recipientURL := u.String()
-
-	log := appctx.GetLogger(ctx)
-	log.Info().Msgf("in OCM Send! %s %s", recipientURL, requestBody)
 
 	req, err := http.NewRequest(http.MethodPost, recipientURL, strings.NewReader(string(requestBody)))
 	if err != nil {
@@ -90,7 +85,7 @@ func Send(ctx context.Context, requestBodyMap map[string]interface{}, pi *ocmpro
 			e = errors.Wrap(e, "sender: error reading request body")
 			return e
 		}
-		err = errors.Wrap(fmt.Errorf("%s: %s", resp.Status, string(respBody)), "sender: error from "+ocmEndpoint)
+		err = errors.Wrap(fmt.Errorf("%s: %s", resp.Status, string(respBody)), "sender: error sending create ocm core share post request")
 		return err
 	}
 	return nil
